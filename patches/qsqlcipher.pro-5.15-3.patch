@@ -1,0 +1,41 @@
+--- qsqlcipher.old/qsqlcipher/qsqlcipher.pro	2021-04-06 09:56:24.272672551 +0700
++++ qsqlcipher/qsqlcipher/qsqlcipher.pro	2021-04-06 11:03:51.290955036 +0700
+@@ -5,7 +5,28 @@
+ HEADERS += $$PWD/qsql_sqlite_p.h
+ SOURCES += $$PWD/qsql_sqlite.cpp $$PWD/smain.cpp
+ 
+-system-sqlcipher {
++conan-sqlcipher {
++    include($$PWD/../../conanbuildinfo.pri)
++
++    INCLUDEPATH += $$CONAN_INCLUDEPATH_SQLCIPHER
++    LIBS += $$CONAN_LIBDIRS_SQLCIPHER
++    LIBS += $$CONAN_LIBS_SQLCIPHER
++    LIBS += $$CONAN_SYSTEMLIBS_SQLCIPHER
++    DEFINES += $$CONAN_DEFINES_SQLCIPHER
++
++    INCLUDEPATH += $$CONAN_INCLUDEPATH_OPENSSL
++    LIBS += $$CONAN_LIBDIRS_OPENSSL
++    LIBS += $$CONAN_LIBS_OPENSSL
++    LIBS += $$CONAN_SYSTEMLIBS_OPENSSL
++    DEFINES += $$CONAN_DEFINES_OPENSSL
++
++    DEFINES += DISABLE_COLUMN_METADATA
++
++    message($$INCLUDEPATH)
++    message($$LIBS)
++    message($$DEFINES)
++
++} else:system-sqlcipher {
+     CONFIG += link_pkgconfig
+     PKGCONFIG += sqlcipher
+     # or if pkg-config is not available
+@@ -27,7 +48,7 @@
+ 
+ DEFINES += QT_NO_CAST_TO_ASCII QT_NO_CAST_FROM_ASCII
+ 
+-!system-sqlcipher {
++!system-sqlcipher:!conan-sqlcipher {
+     QMAKE_EXTRA_TARGETS += libtomcrypt
+     win32-msvc {
+         libtomcrypt.commands = cd $$PWD/../3rdparty/libtomcrypt && \
