@@ -38,4 +38,7 @@ class QSqlCipherConan(ConanFile):
             self.copy('*.a', dst='lib', src='qsqlcipher/plugins/sqldrivers')
 
     def package_info(self):
-        self.cpp_info.libs = ['qsqlcipher']
+        if self.settings.compiler == "Visual Studio" and self.settings.build_type == "Debug":
+            self.cpp_info.libs = ['qsqlcipherd']
+        else:
+            self.cpp_info.libs = ['qsqlcipher']
