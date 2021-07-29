@@ -10,6 +10,12 @@ class QSqlCipherConan(ConanFile):
     generators = 'qmake'
     requires = ['sqlcipher/4.4.2', 'qt/5.15.2@bincrafters/stable']
     exports = ["patches/*.patch"]
+    options = {
+        "shared": [True, False],
+    }
+    default_options = {
+        "shared": False,
+    }
 
     def source(self):
         sources_git = tools.Git(folder='qsqlcipher')
@@ -22,23 +28,31 @@ class QSqlCipherConan(ConanFile):
 
     def build(self):
         tools.patch(base_path="qsqlcipher", patch_file="patches/qsqlcipher.pro-%s.patch" % self.version, strip=1)
+        qmake_config_flags = ["conan-sqlcipher"]
+        if not self.options.shared:
+            qmake_config_flags += ["staticlib"]
+        qmake_config_flags_as_param = " ".join(qmake_config_flags)
         if self.settings.compiler == "Visual Studio":
             with tools.vcvars(self.settings):
-                self.run("qmake -spec win32-msvc -tp vc CONFIG+=\"staticlib conan-sqlcipher\" qsqlcipher\\qsqlcipher\\qsqlcipher.pro", run_environment=True)
+                self.run("qmake -spec win32-msvc -tp vc CONFIG+=\"%s\" qsqlcipher\\qsqlcipher\\qsqlcipher.pro" % qmake_config_flags_as_param, run_environment=True)
             msbuild = MSBuild(self)
             msbuild.build("qsqlcipher.vcxproj")
         else:
-            self.run("qmake CONFIG+=\"staticlib conan-sqlcipher\" qsqlcipher/qsqlcipher.pro", run_environment=True)
+            self.run("qmake CONFIG+=\"%s\" qsqlcipher/qsqlcipher.pro" % qmake_config_flags_as_param, run_environment=True)
             self.run(self._make_program(), run_environment=True)
 
     def package(self):
         if self.settings.compiler == "Visual Studio":
             self.copy('*.lib', dst='lib', src='plugins/sqldrivers')
+            self.copy('*.dll', dst='plugins/sqldrivers', src='plugins/sqldrivers')
         else:
             self.copy('*.a', dst='lib', src='qsqlcipher/plugins/sqldrivers')
+            self.copy('*.so*', dst='plugins/sqldrivers', src='qsqlcipher/plugins/sqldrivers')
+            self.copy('*.dylib', dst='plugins/sqldrivers', src='qsqlcipher/plugins/sqldrivers')
 
     def package_info(self):
-        if self.settings.compiler == "Visual Studio" and self.settings.build_type == "Debug":
-            self.cpp_info.libs = ['qsqlcipherd']
-        else:
-            self.cpp_info.libs = ['qsqlcipher']
+        if not self.options.shared:
+            if self.settings.compiler == "Visual Studio" and self.settings.build_type == "Debug":
+                self.cpp_info.libs = ['qsqlcipherd']
+            else:
+                self.cpp_info.libs = ['qsqlcipher']
