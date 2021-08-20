@@ -38,7 +38,14 @@ class QSqlCipherConan(ConanFile):
             msbuild = MSBuild(self)
             msbuild.build("qsqlcipher.vcxproj")
         else:
-            self.run("qmake CONFIG+=\"%s\" qsqlcipher/qsqlcipher.pro" % qmake_config_flags_as_param, run_environment=True)
+            additional_libs = ""
+            if tools.is_apple_os(self.settings.os):
+                additional_libs = "LIBS+=\"-framework AppKit -framework Security -framework Foundation\""
+            self.run("qmake CONFIG+=\"{config_flags}\" {additional_libs} qsqlcipher/qsqlcipher.pro".format(
+                    config_flags=qmake_config_flags_as_param,
+                    additional_libs=additional_libs),
+                run_environment=True)
+
             self.run(self._make_program(), run_environment=True)
 
     def package(self):
