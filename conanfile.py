@@ -63,3 +63,8 @@ class QSqlCipherConan(ConanFile):
                 self.cpp_info.libs = ['qsqlcipherd']
             else:
                 self.cpp_info.libs = ['qsqlcipher']
+
+    def package_id(self):
+        self.info.shared_library_package_id()
+        if self.options.shared:
+            self.info.settings.qt_version = self.dependencies["qt"].ref.version
