@@ -66,5 +66,3 @@ class QSqlCipherConan(ConanFile):
 
     def package_id(self):
         self.info.shared_library_package_id()
-        if self.options.shared:
-            self.info.settings.qt_version = self.dependencies["qt"].ref.version
