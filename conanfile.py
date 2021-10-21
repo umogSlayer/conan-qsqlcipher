@@ -1,14 +1,17 @@
 from conans import ConanFile, MSBuild
 from conans import tools
+from conans.errors import ConanInvalidConfiguration
 import os, shutil
 
 class QSqlCipherConan(ConanFile):
     name = 'qsqlcipher'
-    version = '5.15-3'
+    version_prefix = '5.15'
+    version_suffix = '-3'
+    branch_name = "%s%s" % (version_prefix, version_suffix)
     url = 'https://github.com/umogSlayer/conan-qsqlcipher'
     settings = 'os', 'compiler', 'build_type', 'arch'
     generators = 'qmake'
-    requires = ['sqlcipher/4.4.2', 'qt/5.15.2@bincrafters/stable']
+    requires = ['sqlcipher/4.4.3', 'qt/5.15.2@onyxcorp/stable']
     exports = ["patches/*.patch"]
     options = {
         "shared": [True, False],
@@ -17,17 +20,31 @@ class QSqlCipherConan(ConanFile):
         "shared": False,
     }
 
+    def validate(self):
+        if (self.version is None) \
+                or self.version[:len(self.version_prefix)] != self.version_prefix \
+                or self.version[-len(self.version_suffix):] != self.version_suffix:
+            raise ConanInvalidConfiguration(
+                "Invalid version number, should be %s.X%s" \
+                % (self.version_prefix, self.version_suffix))
+        # else "compatibility mode"
+        if self.version != self.version_prefix + self.version_suffix:
+            qt = self.dependencies["qt"].ref
+            if qt.version != self.version[:-len(self.version_suffix)]:
+                raise ConanInvalidConfiguration("Package version should match Qt version "
+                                                + qt.version)
+
     def source(self):
         sources_git = tools.Git(folder='qsqlcipher')
         sources_git.clone('https://github.com/sjemens/qsqlcipher-qt5.git',
-                          branch='v%s' % self.version,
+                          branch='v%s' % self.branch_name,
                           shallow=True)
 
     def _make_program(self):
         return "make"
 
     def build(self):
-        tools.patch(base_path="qsqlcipher", patch_file="patches/qsqlcipher.pro-%s.patch" % self.version, strip=1)
+        tools.patch(base_path="qsqlcipher", patch_file="patches/qsqlcipher.pro-%s.patch" % self.branch_name, strip=1)
         qmake_config_flags = ["conan-sqlcipher"]
         if not self.options.shared:
             qmake_config_flags += ["staticlib"]
