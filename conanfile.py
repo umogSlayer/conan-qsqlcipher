@@ -20,9 +20,12 @@ class QSqlCipherConan(ConanFile):
         "shared": False,
     }
 
+    def set_version(self):
+        if self.version is None:
+            self.version = self.version_prefix + self.version_suffix
+
     def validate(self):
-        if (self.version is None) \
-                or self.version[:len(self.version_prefix)] != self.version_prefix \
+        if self.version[:len(self.version_prefix)] != self.version_prefix \
                 or self.version[-len(self.version_suffix):] != self.version_suffix:
             raise ConanInvalidConfiguration(
                 "Invalid version number, should be %s.X%s" \
