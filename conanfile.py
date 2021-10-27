@@ -86,3 +86,4 @@ class QSqlCipherConan(ConanFile):
 
     def package_id(self):
         self.info.shared_library_package_id()
+        self.info.requires["qt"].package_revision_mode()
