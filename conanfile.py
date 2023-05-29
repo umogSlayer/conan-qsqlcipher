@@ -1,6 +1,10 @@
-from conans import ConanFile, MSBuild
+from conans import ConanFile
 from conans import tools
 from conans.errors import ConanInvalidConfiguration
+
+from conan.tools.microsoft import VCVars, MSBuild
+from conan.tools.env import VirtualRunEnv
+
 import os, shutil
 
 class QSqlCipherConan(ConanFile):
@@ -19,6 +23,12 @@ class QSqlCipherConan(ConanFile):
     default_options = {
         "shared": False,
     }
+
+    def generate(self):
+        if self.settings.compiler == "Visual Studio":
+            VCVars(self).generate()
+
+        VirtualRunEnv(self).generate(scope="build")
 
     def set_version(self):
         if self.version is None:
@@ -53,8 +63,7 @@ class QSqlCipherConan(ConanFile):
             qmake_config_flags += ["staticlib"]
         qmake_config_flags_as_param = " ".join(qmake_config_flags)
         if self.settings.compiler == "Visual Studio":
-            with tools.vcvars(self.settings):
-                self.run("qmake -spec win32-msvc -tp vc CONFIG+=\"%s\" qsqlcipher\\qsqlcipher\\qsqlcipher.pro" % qmake_config_flags_as_param, run_environment=True)
+            self.run("qmake -spec win32-msvc -tp vc CONFIG+=\"%s\" qsqlcipher\\qsqlcipher\\qsqlcipher.pro" % qmake_config_flags_as_param)
             msbuild = MSBuild(self)
             msbuild.build("qsqlcipher.vcxproj")
         else:
@@ -62,11 +71,10 @@ class QSqlCipherConan(ConanFile):
             if tools.is_apple_os(self.settings.os):
                 additional_libs = "LIBS+=\"-framework AppKit -framework Security -framework Foundation\""
             self.run("qmake CONFIG+=\"{config_flags}\" {additional_libs} qsqlcipher/qsqlcipher.pro".format(
-                    config_flags=qmake_config_flags_as_param,
-                    additional_libs=additional_libs),
-                run_environment=True)
+                     config_flags=qmake_config_flags_as_param,
+                     additional_libs=additional_libs))
 
-            self.run(self._make_program(), run_environment=True)
+            self.run(self._make_program())
 
     def package(self):
         if self.settings.compiler == "Visual Studio":
