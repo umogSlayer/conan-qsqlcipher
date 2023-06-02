@@ -1,22 +1,24 @@
-from conans import ConanFile
-from conans import tools
-from conans.errors import ConanInvalidConfiguration
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
 
-from conan.tools.microsoft import VCVars, MSBuild
 from conan.tools.env import VirtualRunEnv
+from conan.tools.files import patch, copy
+from conan.tools.scm import Git
+from conan.tools.apple import is_apple_os
+from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake
 
 import os, shutil
 
 class QSqlCipherConan(ConanFile):
     name = 'qsqlcipher'
+    package_type = "library"
     version_prefix = '5.15'
     version_suffix = '-3'
     branch_name = "%s%s" % (version_prefix, version_suffix)
     url = 'https://github.com/umogSlayer/conan-qsqlcipher'
     settings = 'os', 'compiler', 'build_type', 'arch'
-    generators = 'qmake'
     requires = ['sqlcipher/4.4.3', 'qt/5.15.2@onyxcorp/stable']
-    exports = ["patches/*.patch"]
+    exports = ["patches/*.patch", "CMakeLists.txt"]
     options = {
         "shared": [True, False],
     }
@@ -25,10 +27,9 @@ class QSqlCipherConan(ConanFile):
     }
 
     def generate(self):
-        if self.settings.compiler == "Visual Studio":
-            VCVars(self).generate()
-
         VirtualRunEnv(self).generate(scope="build")
+        CMakeToolchain(self).generate()
+        CMakeDeps(self).generate()
 
     def set_version(self):
         if self.version is None:
@@ -48,50 +49,24 @@ class QSqlCipherConan(ConanFile):
                                                 + qt.version)
 
     def source(self):
-        sources_git = tools.Git(folder='qsqlcipher')
+        sources_git = Git(self)
+        clone_args = ['--depth', '1', '--branch', 'v%s' % self.branch_name]
         sources_git.clone('https://github.com/sjemens/qsqlcipher-qt5.git',
-                          branch='v%s' % self.branch_name,
-                          shallow=True)
+                          args=clone_args)
+        copy(self, "CMakeLists.txt", ".", "qsqlcipher-qt5")
 
     def _make_program(self):
         return "make"
 
     def build(self):
-        tools.patch(base_path="qsqlcipher", patch_file="patches/qsqlcipher.pro-%s.patch" % self.branch_name, strip=1)
-        qmake_config_flags = ["conan-sqlcipher"]
-        if not self.options.shared:
-            qmake_config_flags += ["staticlib"]
-        qmake_config_flags_as_param = " ".join(qmake_config_flags)
-        if self.settings.compiler == "Visual Studio":
-            self.run("qmake -spec win32-msvc -tp vc CONFIG+=\"%s\" qsqlcipher\\qsqlcipher\\qsqlcipher.pro" % qmake_config_flags_as_param)
-            msbuild = MSBuild(self)
-            msbuild.build("qsqlcipher.vcxproj")
-        else:
-            additional_libs = ""
-            if tools.is_apple_os(self.settings.os):
-                additional_libs = "LIBS+=\"-framework AppKit -framework Security -framework Foundation\""
-            self.run("qmake CONFIG+=\"{config_flags}\" {additional_libs} qsqlcipher/qsqlcipher.pro".format(
-                     config_flags=qmake_config_flags_as_param,
-                     additional_libs=additional_libs))
-
-            self.run(self._make_program())
+        cm = CMake(self)
+        cm.configure(build_script_folder="qsqlcipher-qt5")
+        cm.build()
 
     def package(self):
-        if self.settings.compiler == "Visual Studio":
-            self.copy('*.lib', dst='lib', src='plugins/sqldrivers')
-            self.copy('*.dll', dst='plugins/sqldrivers', src='plugins/sqldrivers')
-        else:
-            self.copy('*.a', dst='lib', src='qsqlcipher/plugins/sqldrivers')
-            self.copy('*.so*', dst='plugins/sqldrivers', src='qsqlcipher/plugins/sqldrivers')
-            self.copy('*.dylib', dst='plugins/sqldrivers', src='qsqlcipher/plugins/sqldrivers')
+        cm = CMake(self)
+        cm.install()
 
     def package_info(self):
         if not self.options.shared:
-            if self.settings.compiler == "Visual Studio" and self.settings.build_type == "Debug":
-                self.cpp_info.libs = ['qsqlcipherd']
-            else:
-                self.cpp_info.libs = ['qsqlcipher']
-
-    def package_id(self):
-        self.info.shared_library_package_id()
-        self.info.requires["qt"].package_revision_mode()
+            self.cpp_info.libs = ['qsqlcipher']
