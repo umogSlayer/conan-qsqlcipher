@@ -2,12 +2,10 @@ from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
 
 from conan.tools.env import VirtualRunEnv
-from conan.tools.files import patch, copy
+from conan.tools.files import copy
 from conan.tools.scm import Git
-from conan.tools.apple import is_apple_os
 from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake
-
-import os, shutil
+from conan.tools.microsoft import VCVars
 
 class QSqlCipherConan(ConanFile):
     name = 'qsqlcipher'
@@ -18,7 +16,7 @@ class QSqlCipherConan(ConanFile):
     url = 'https://github.com/umogSlayer/conan-qsqlcipher'
     settings = 'os', 'compiler', 'build_type', 'arch'
     requires = ['sqlcipher/4.4.3', 'qt/5.15.2@onyxcorp/stable']
-    exports = ["patches/*.patch", "CMakeLists.txt"]
+    exports = ["CMakeLists.txt"]
     options = {
         "shared": [True, False],
     }
@@ -27,6 +25,8 @@ class QSqlCipherConan(ConanFile):
     }
 
     def generate(self):
+        if self.settings.compiler == "Visual Studio":
+            VCVars(self).generate()
         VirtualRunEnv(self).generate(scope="build")
         CMakeToolchain(self).generate()
         CMakeDeps(self).generate()
