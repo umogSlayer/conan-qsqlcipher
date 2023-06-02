@@ -31,8 +31,17 @@ target_link_libraries(qsqlcipher
         Qt5::Sql
         Qt5::SqlPrivate)
 
+target_compile_definitions(qsqlcipher
+    PRIVATE
+        QT_PLUGIN
+        QT_NO_CAST_TO_ASCII
+        QT_NO_CAST_FROM_ASCII)
+
 if (BUILD_SHARED_LIBS)
     install(TARGETS qsqlcipher DESTINATION LIBRARY DESTINATION plugins/sqldrivers)
 else ()
+    target_compile_definitions(qsqlcipher
+        PRIVATE
+            QT_STATICPLUGIN)
     install(TARGETS qsqlcipher DESTINATION ARCHIVE DESTINATION lib)
 endif ()
