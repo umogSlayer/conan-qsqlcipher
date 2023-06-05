@@ -35,7 +35,8 @@ target_compile_definitions(qsqlcipher
     PRIVATE
         QT_PLUGIN
         QT_NO_CAST_TO_ASCII
-        QT_NO_CAST_FROM_ASCII)
+        QT_NO_CAST_FROM_ASCII
+        DISABLE_COLUMN_METADATA)
 
 if (BUILD_SHARED_LIBS)
     install(TARGETS qsqlcipher DESTINATION LIBRARY DESTINATION plugins/sqldrivers)
