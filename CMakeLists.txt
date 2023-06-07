@@ -10,6 +10,9 @@ find_package(sqlcipher)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
+if (APPLE)
+    set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
+endif ()
 
 if (BUILD_SHARED_LIBS)
     add_library(qsqlcipher MODULE
@@ -44,9 +47,5 @@ else ()
     target_compile_definitions(qsqlcipher
         PRIVATE
             QT_STATICPLUGIN)
-    if (APPLE)
-        set_target_properties(qsqlcipher PROPERTIES
-            SUFFIX .dylib)
-    endif ()
     install(TARGETS qsqlcipher DESTINATION ARCHIVE DESTINATION lib)
 endif ()
