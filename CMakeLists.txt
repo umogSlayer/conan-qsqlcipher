@@ -44,5 +44,9 @@ else ()
     target_compile_definitions(qsqlcipher
         PRIVATE
             QT_STATICPLUGIN)
+    if (APPLE)
+        set_target_properties(qsqlcipher PROPERTIES
+            SUFFIX .dylib)
+    endif ()
     install(TARGETS qsqlcipher DESTINATION ARCHIVE DESTINATION lib)
 endif ()
