@@ -5,10 +5,10 @@ from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake, cmake_layout
 class QSqlCipherConan(ConanFile):
     name = 'qsqlcipher-qt6'
     package_type = "library"
-    version = '6.6-1'
+    version = '6.7-1'
     url = 'https://github.com/umogSlayer/conan-qsqlcipher'
     settings = 'os', 'compiler', 'build_type', 'arch'
-    requires = ['sqlcipher/4.4.3', 'qt/6.6.0']
+    requires = ['sqlcipher/4.4.3', 'qt/6.7.1']
     exports_sources = ["CMakeLists.txt", "src/*"]
     options = {
         "shared": [True, False],
