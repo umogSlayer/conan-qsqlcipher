@@ -8,7 +8,6 @@ class QSqlCipherConan(ConanFile):
     version = '6.7-1'
     url = 'https://github.com/umogSlayer/conan-qsqlcipher'
     settings = 'os', 'compiler', 'build_type', 'arch'
-    requires = ['sqlcipher/4.4.3', 'qt/6.7.1']
     exports_sources = ["CMakeLists.txt", "src/*"]
     options = {
         "shared": [True, False],
@@ -19,6 +18,10 @@ class QSqlCipherConan(ConanFile):
 
     def layout(self):
         cmake_layout(self)
+
+    def requirements(self):
+        self.requires("sqlcipher/4.4.3")
+        self.requires("qt/[>=6.7.0]")
 
     def generate(self):
         CMakeDeps(self).generate()
